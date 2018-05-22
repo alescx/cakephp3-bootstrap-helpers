@@ -26,6 +26,7 @@ namespace Bootstrap\View\Helper;
 class HtmlHelper extends \Cake\View\Helper\HtmlHelper {
 
     use ClassTrait;
+    use EasyIconTrait;
 
     /**
      * Default config for the helper.
@@ -79,7 +80,7 @@ class HtmlHelper extends \Cake\View\Helper\HtmlHelper {
             'alertCloseButton' =>
                 '<button type="button" class="close{{attrs.class}}" data-dismiss="alert" aria-label="{{label}}"{{attrs}}>{{content}}</button>',
             'alertCloseContent' => '<span aria-hidden="true">&times;</span>',
-            'tooltip' => '<{{tag}} data-toggle="{{toggle}}" data-placement="{{placement}}" title="{{tooltip}}">{{content}}</{{tag}}>',
+            'tooltip' => '<{{tag}} data-toggle="{{toggle}}" data-placement="{{placement}}" title="{{tooltip}}"{{attrs}}>{{content}}</{{tag}}>',
             'progressBar' =>
 '<div class="progress-bar progress-bar-{{type}}{{attrs.class}}" role="progressbar"
 aria-valuenow="{{width}}" aria-valuemin="{{min}}" aria-valuemax="{{max}}" style="width: {{width}}%;"{{attrs}}>{{inner}}</div>',
@@ -131,6 +132,13 @@ aria-valuenow="{{width}}" aria-valuemin="{{min}}" aria-valuemax="{{max}}" style=
             'attrs' => $this->templater()->formatAttributes($options),
             'templateVars' => $options['templateVars']
         ]);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function link($title, $url = null, array $options = []) {
+        return $this->_easyIcon('parent::link', 0, 2, [$title, $url, $options]);
     }
 
     /**
@@ -457,11 +465,13 @@ aria-valuenow="{{width}}" aria-valuemin="{{min}}" aria-valuemax="{{max}}" style=
             }
         }
         $options += [
+            'align' => 'left',
             'templateVars' => []
         ];
+        $options = $this->addClass($options, 'dropdown-menu-'.$options['align']);
         return $this->formatTemplate('dropdownMenu', [
             'content' => $content,
-            'attrs' => $this->templater()->formatAttributes($options),
+            'attrs' => $this->templater()->formatAttributes($options, ['align']),
             'templateVars' => $options['templateVars']
         ]);
     }

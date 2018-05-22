@@ -36,6 +36,23 @@ class FormHelperTest extends TestCase {
             'minutesRegex' => 'preg:/(?:<option value="([\d]+)">0?\\1<\/option>[\r\n]*)*/',
             'meridianRegex' => 'preg:/(?:<option value="(am|pm)">\\1<\/option>[\r\n]*)*/',
         ];
+
+        // from CakePHP FormHelperTest
+        $this->article = [
+            'schema' => [
+                'id' => ['type' => 'integer'],
+                'author_id' => ['type' => 'integer', 'null' => true],
+                'title' => ['type' => 'string', 'null' => true],
+                'body' => 'text',
+                'published' => ['type' => 'string', 'length' => 1, 'default' => 'N'],
+                '_constraints' => ['primary' => ['type' => 'primary', 'columns' => ['id']]]
+            ],
+            'required' => [
+                'author_id' => true,
+                'title' => true,
+            ]
+        ];
+
         Configure::write('debug', true);
     }
 
@@ -70,6 +87,96 @@ class FormHelperTest extends TestCase {
         // Automatically return to non horizonal form
         $result = $this->form->create();
         $this->assertEquals($this->form->inline, false);
+    }
+
+    public function testColumnSizes() {
+        $this->form->setConfig('columns', [
+            'md' => [
+                'label' => 2,
+                'input' => 6,
+                'error' => 4
+            ],
+            'sm' => [
+                'label' => 12,
+                'input' => 12,
+                'error' => 12
+            ]
+        ], false);
+        $this->form->create(null, ['horizontal' => true]);
+        $result = $this->form->control('test', ['type' => 'text']);
+        $expected = [
+            ['div' => [
+                'class' => 'form-group text'
+            ]],
+            ['label' => [
+                'class' => 'control-label col-md-2 col-sm-12',
+                'for' => 'test'
+            ]],
+            'Test',
+            '/label',
+            ['div' => [
+                'class' => 'col-md-6 col-sm-12'
+            ]],
+            ['input' => [
+                'type'  => 'text',
+                'class' => 'form-control',
+                'name'  => 'test',
+                'id'    => 'test'
+            ]],
+            '/div',
+            '/div'
+        ];
+        $this->assertHtml($expected, $result);
+
+        $this->article['errors'] = [
+            'Article' => [
+                'title' => 'error message',
+                'content' => 'some <strong>test</strong> data with <a href="#">HTML</a> chars'
+            ]
+        ];
+
+        $this->form->setConfig('columns', [
+            'md' => [
+                'label' => 2,
+                'input' => 6,
+                'error' => 4
+            ],
+            'sm' => [
+                'label' => 4,
+                'input' => 8,
+                'error' => 0
+            ]
+        ], false);
+        $this->form->create($this->article, ['horizontal' => true]);
+        $result = $this->form->control('Article.title', ['type' => 'text']);
+        $expected = [
+            ['div' => [
+                'class' => 'form-group has-error text'
+            ]],
+            ['label' => [
+                'class' => 'control-label col-md-2 col-sm-4',
+                'for' => 'article-title'
+            ]],
+            'Title',
+            '/label',
+            ['div' => [
+                'class' => 'col-md-6 col-sm-8'
+            ]],
+            ['input' => [
+                'type'  => 'text',
+                'class' => 'form-control has-error',
+                'name'  => 'Article[title]',
+                'id'    => 'article-title'
+            ]],
+            '/div',
+            ['span' => [
+                'class' => 'help-block error-message col-md-offset-0 col-md-4 col-sm-offset-4 col-sm-8'
+            ]],
+            'error message',
+            '/span',
+            '/div'
+        ];
+        $this->assertHtml($expected, $result);
     }
 
     public function testButton() {
@@ -111,7 +218,7 @@ class FormHelperTest extends TestCase {
             unset($options['_formOptions']);
         }
         $this->form->create(null, $formOptions);
-        $result = $this->form->input($fieldName, $options);
+        $result = $this->form->control($fieldName, $options);
         $assert = $this->assertHtml($expected, $result, $debug);
     }
 
@@ -243,7 +350,7 @@ class FormHelperTest extends TestCase {
         ];
         $expected = [
             ['div' => [
-                'class' => 'form-group'
+                'class' => 'form-group inlineradio'
             ]],
             ['label' => [
                 'class' => 'control-label',
@@ -275,7 +382,7 @@ class FormHelperTest extends TestCase {
             ]);
         }
         $expected = array_merge($expected, ['/div']);
-        $this->_testInput($expected, $fieldName, $options);
+        $this->_testInput($expected, $fieldName, $options, true);
         // Horizontal
         $options += [
             '_formOptions' => ['horizontal' => true]
@@ -325,7 +432,7 @@ class FormHelperTest extends TestCase {
         $options['inline'] = true;
         $expected = [
             ['div' => [
-                'class' => 'form-group'
+                'class' => 'form-group inlineradio'
             ]],
             ['label' => [
                 'class' => 'control-label col-md-2',
@@ -544,6 +651,14 @@ class FormHelperTest extends TestCase {
         $this->_testInput($expected, $fieldName, $options + [
             'append' => [$this->form->button('Go!'), $this->form->button('GoGo!')]
         ]);
+    }
+
+    public function testAppendDropdown() {
+        $fieldName = 'field';
+        $options   = [
+            'type' => 'text',
+            'label' => false
+        ];
         // Test with append dropdown
         $expected = [
             ['div' => [
@@ -572,7 +687,7 @@ class FormHelperTest extends TestCase {
             ['span' => ['class' => 'caret']], '/span',
             '/button',
             ['ul' => [
-                'class' => 'dropdown-menu'
+                'class' => 'dropdown-menu dropdown-menu-left'
             ]],
             ['li' => []], ['a' => ['href'  => '#']], 'Link 1', '/a', '/li',
             ['li' => []], ['a' => ['href'  => '#']], 'Link 2', '/a', '/li',
@@ -595,13 +710,65 @@ class FormHelperTest extends TestCase {
                 $this->form->Html->link('Link 3', '#')
             ])
         ]);
+
+        // Test with append dropup
+        $expected = [
+            ['div' => [
+                'class' => 'form-group text'
+            ]],
+            ['div' => [
+                'class' => 'input-group'
+            ]],
+            ['input' => [
+                'type' => 'text',
+                'class' => 'form-control',
+                'name' => $fieldName,
+                'id' => $fieldName
+            ]],
+            ['span' => [
+                'class' => 'input-group-btn'
+            ]],
+            ['div' => [
+                'class' => 'btn-group dropup'
+            ]],
+            ['button' => [
+                'data-toggle' => 'dropdown',
+                'class' => 'dropdown-toggle btn btn-default'
+            ]],
+            'Action',
+            ['span' => ['class' => 'caret']], '/span',
+            '/button',
+            ['ul' => [
+                'class' => 'dropdown-menu dropdown-menu-left'
+            ]],
+            ['li' => []], ['a' => ['href'  => '#']], 'Link 1', '/a', '/li',
+            ['li' => []], ['a' => ['href'  => '#']], 'Link 2', '/a', '/li',
+            ['li' => [
+                'role' => 'separator',
+                'class' => 'divider'
+            ]], '/li',
+            ['li' => []], ['a' => ['href'  => '#']], 'Link 3', '/a', '/li',
+            '/ul',
+            '/div',
+            '/span',
+            '/div',
+            '/div'
+        ];
+        $this->_testInput($expected, $fieldName, $options + [
+            'append' => $this->form->dropdownButton('Action', [
+                $this->form->Html->link('Link 1', '#'),
+                $this->form->Html->link('Link 2', '#'),
+                'divider',
+                $this->form->Html->link('Link 3', '#')
+            ], ['dropup' => true])
+        ]);
     }
 
     public function testInputTemplateVars() {
         $fieldName = 'field';
         // Add a template with the help placeholder.
         $help = 'Some help text.';
-        $this->form->templates([
+        $this->form->setTemplates([
             'inputContainer' => '<div class="form-group {{type}}{{required}}">{{content}}<span>{{help}}</span></div>'
         ]);
         // Standard form
@@ -818,7 +985,7 @@ class FormHelperTest extends TestCase {
         $this->assertHtml($expected, $result);
 
         // Test with input()
-        $result = $this->form->input('Contact.date', ['type' => 'date']);
+        $result = $this->form->control('Contact.date', ['type' => 'date']);
         $now = strtotime('now');
         $expected = [
             ['div' => [
@@ -900,7 +1067,7 @@ class FormHelperTest extends TestCase {
                 'name' => 'Contact[picture]',
                 'id' => 'Contact[picture]',
                 'style' => 'display: none;',
-                'onchange' => "document.getElementById('Contact[picture]-input').value = (this.files.length <= 1) ? this.files[0].name : this.files.length + ' ' + 'files selected';"
+                'onchange' => "document.getElementById('Contact[picture]-input').value = (this.files.length <= 1) ? (this.files.length ? this.files[0].name : '') : this.files.length + ' ' + 'files selected';"
             ]],
             ['div' => ['class' => 'input-group']],
             ['div' => ['class' => 'input-group-btn']],
@@ -914,7 +1081,7 @@ class FormHelperTest extends TestCase {
             '/div',
             ['input' => [
                 'type' => 'text',
-                'name' => 'Contact[picture]-text',
+                'name' => 'Contact[picture-text]',
                 'class' => 'form-control',
                 'readonly' => 'readonly',
                 'id' => 'Contact[picture]-input',
@@ -932,7 +1099,7 @@ class FormHelperTest extends TestCase {
                 'name' => 'Contact[picture]',
                 'id' => 'Contact[picture]',
                 'style' => 'display: none;',
-                'onchange' => "document.getElementById('Contact[picture]-input').value = (this.files.length <= 1) ? this.files[0].name : this.files.length + ' ' + 'files selected';"
+                'onchange' => "document.getElementById('Contact[picture]-input').value = (this.files.length <= 1) ? (this.files.length ? this.files[0].name : '') : this.files.length + ' ' + 'files selected';"
             ]],
             ['div' => ['class' => 'input-group']],
             ['div' => ['class' => 'input-group-btn']],
@@ -946,7 +1113,7 @@ class FormHelperTest extends TestCase {
             '/div',
             ['input' => [
                 'type' => 'text',
-                'name' => 'Contact[picture]-text',
+                'name' => 'Contact[picture-text]',
                 'class' => 'form-control',
                 'readonly' => 'readonly',
                 'id' => 'Contact[picture]-input',
@@ -957,4 +1124,71 @@ class FormHelperTest extends TestCase {
         $this->assertHtml($expected, $result);
     }
 
+    public function testUploadCustomFileInput() {
+        $expected = [
+            ['input' => [
+                'type' => 'file',
+                'name' => 'Contact[picture]',
+                'id' => 'Contact[picture]',
+                'style' => 'display: none;',
+                'onchange' => "document.getElementById('Contact[picture]-input').value = (this.files.length <= 1) ? (this.files.length ? this.files[0].name : '') : this.files.length + ' ' + 'files selected';"
+            ]],
+            ['div' => ['class' => 'input-group']],
+            ['div' => ['class' => 'input-group-btn']],
+            ['button' => [
+                'class' => 'btn btn-default',
+                'type' => 'button',
+                'onclick' => "document.getElementById('Contact[picture]').click();"
+            ]],
+            __('Choose File'),
+            '/button',
+            '/div',
+            ['input' => [
+                'type' => 'text',
+                'name' => 'Contact[picture-text]',
+                'class' => 'form-control',
+                'readonly' => 'readonly',
+                'id' => 'Contact[picture]-input',
+                'onclick' => "document.getElementById('Contact[picture]').click();"
+            ]],
+            '/div',
+        ];
+        $this->form->setConfig('useCustomFileInput', true);
+
+        $result = $this->form->file('Contact.picture');
+        $this->assertHtml($expected, $result);
+
+        $this->form->request = $this->form->request->withData('Contact.picture', [
+            'name' => '', 'type' => '', 'tmp_name' => '',
+            'error' => 4, 'size' => 0
+        ]);
+        $result = $this->form->file('Contact.picture');
+        $this->assertHtml($expected, $result);
+
+        $this->form->request = $this->form->request->withData(
+            'Contact.picture',
+            'no data should be set in value'
+        );
+        $result = $this->form->file('Contact.picture');
+        $this->assertHtml($expected, $result);
+    }
+
+    public function testFormSecuredFileControl() {
+        $this->form->setConfig('useCustomFileInput', true);
+        // Test with filename, see issues #56, #123
+        $this->assertEquals([], $this->form->fields);
+        $this->form->file('picture');
+        $this->form->file('Contact.picture');
+        $expected = [
+            'picture-text',
+            'picture.name', 'picture.type',
+            'picture.tmp_name', 'picture.error',
+            'picture.size',
+            'Contact.picture-text',
+            'Contact.picture.name', 'Contact.picture.type',
+            'Contact.picture.tmp_name', 'Contact.picture.error',
+            'Contact.picture.size'
+        ];
+        $this->assertEquals($expected, $this->form->fields);
+    }
 }
