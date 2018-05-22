@@ -86,7 +86,7 @@ class FormHelper extends \Cake\View\Helper\FormHelper {
             'hiddenBlock' => '<div style="display:none;">{{content}}</div>',
             'input' => '<input type="{{type}}" name="{{name}}" class="form-control{{attrs.class}}" {{attrs}} />',
             'inputSubmit' => '<input type="{{type}}"{{attrs}}>',
-            'inputContainer' => '<div class="form-group {{type}}{{required}}">{{content}}</div>',
+            'inputContainer' => '<div class="form-group {{type}}{{required}}"{{inputGroupOptions}}>{{content}}</div>',
             'inputContainerError' => '<div class="form-group has-error {{type}}{{required}}">{{content}}{{error}}</div>',
             'label' => '<label class="control-label{{attrs.class}}"{{attrs}}>{{text}}</label>',
             'labelHorizontal' => '<label class="control-label {{labelColumnClass}}{{attrs.class}}"{{attrs}}>{{text}}</label>',
@@ -110,7 +110,7 @@ class FormHelper extends \Cake\View\Helper\FormHelper {
             'submitContainerHorizontal' => '<div class="form-group"><div class="{{inputColumnOffsetClass}} {{inputColumnClass}}">{{content}}</div></div>',
 
             'inputGroup' => '{{inputGroupStart}}{{input}}{{inputGroupEnd}}',
-            'inputGroupStart' => '<div class="input-group">{{prepend}}',
+            'inputGroupStart' => '<div class="input-group"{{inputGroupOptions}}>{{prepend}}',
             'inputGroupEnd' => '{{append}}</div>',
             'inputGroupAddons' => '<span class="input-group-addon">{{content}}</span>',
             'inputGroupButtons' => '<span class="input-group-btn">{{content}}</span>',
